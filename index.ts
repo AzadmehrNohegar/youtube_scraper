@@ -138,7 +138,7 @@ async function getVideos(channelId: string): Promise<VideoData[]> {
   try {
     const response = await fetch(url);
     const json = (await response.json()) as YouTubeApiResponse<VideoItem>;
-    console.log(json);
+
     return json.items.map((video) => ({
       title: video.snippet.title,
       url: `https://www.youtube.com/watch?v=${video.id.videoId}`,
@@ -159,26 +159,26 @@ async function getVideos(channelId: string): Promise<VideoData[]> {
  * @param sheetId Google Sheets ID
  * @param data Array of video data to write to the sheet
  */
-async function writeToGoogleSheet(
-  sheetId: string,
-  data: VideoData[]
-): Promise<void> {
-  try {
-    const values = Object.values(data) as any[];
+// async function writeToGoogleSheet(
+//   sheetId: string,
+//   data: VideoData[]
+// ): Promise<void> {
+//   try {
+//     const values = Object.values(data) as any[];
 
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: sheetId,
-      range: "A1", // Starting from the first row
-      valueInputOption: "RAW",
-      requestBody: {
-        values,
-      },
-    });
-    console.log("Data successfully written to Google Sheets.");
-  } catch (error) {
-    console.error("Error writing to Google Sheets:", error);
-  }
-}
+//     await sheets.spreadsheets.values.append({
+//       spreadsheetId: sheetId,
+//       range: "A1", // Starting from the first row
+//       valueInputOption: "RAW",
+//       requestBody: {
+//         values,
+//       },
+//     });
+//     console.log("Data successfully written to Google Sheets.");
+//   } catch (error) {
+//     console.error("Error writing to Google Sheets:", error);
+//   }
+// }
 
 /**
  * Writes extracted video data to a local Excel file.
@@ -196,12 +196,10 @@ async function writeToExcel(
     }
 
     // Prepare the worksheet data
-    console.log(data, Object.keys(data), Object.values(data));
-    const headers = Object.keys(data).map((el) => el.toUpperCase()) as any[]; // Column headers
-    const values = Object.values(data) as any[];
+    const headers = Object.keys(data[0]); // Extract headers from the first object
+    const values = data.map((obj) => Object.values(obj)); // Convert objects into arrays of values
 
-    // Create a new workbook and worksheet
-    const worksheet = xlsx.utils.aoa_to_sheet([...headers, ...values]);
+    const worksheet = xlsx.utils.aoa_to_sheet([headers, ...values]);
     const workbook = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(workbook, worksheet, "Videos");
 
@@ -219,7 +217,7 @@ async function writeToExcel(
 async function processYouTubeChannels(): Promise<void> {
   const urls: string[] = (await readGoogleSheet(GOOGLE_SHEETS_ID_INPUT)).slice(
     0,
-    5
+    20
   );
 
   if (urls.length === 0) {
